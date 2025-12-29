@@ -8,12 +8,14 @@ export default function Home() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setErrorMessage("");
 
     if (!username || !password) {
-      alert("ユーザー名とパスワードを入力してください");
+      setErrorMessage("ユーザー名とパスワードを入力してください");
       return;
     }
 
@@ -30,11 +32,11 @@ export default function Home() {
         router.push("/top");
       } else {
         const body = await res.json().catch(() => ({}));
-        alert(body.message ?? "ログインに失敗しました");
+        setErrorMessage(body.message ?? "ログインに失敗しました");
       }
     } catch (err) {
       console.error(err);
-      alert("通信エラーが発生しました");
+      setErrorMessage("通信エラーが発生しました");
     } finally {
       setLoading(false);
     }
@@ -81,6 +83,10 @@ export default function Home() {
               placeholder="パスワードを入力"
             />
           </div>
+
+          {errorMessage && (
+            <p className="text-sm text-red-500">{errorMessage}</p>
+          )}
 
           <button
             type="submit"
