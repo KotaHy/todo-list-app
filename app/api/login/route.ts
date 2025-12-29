@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { hashPassword, verifyPassword } from "@/lib/password";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -16,17 +17,25 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // mt_user テーブルからユーザー情報取得（例：user_name と password で検索）
+    // mt_user テーブルからユーザー情報取得（user_nameで検索）
     const { data, error } = await supabase
       .from("mt_user")
       .select("*")
       .eq("user_name", username)
-      .eq("password", password)
       .single();
 
     if (error || !data) {
       return new Response(
         JSON.stringify({ success: false, message: "ユーザーが見つかりません" }),
+        { status: 401 }
+      );
+    }
+    // ハッシュ化されたパスワードと比較
+    const isValidPassword = await verifyPassword(password, data.password);
+
+    if (!isValidPassword) {
+      return new Response(
+        JSON.stringify({ success: false, message: "パスワードが正しくありません" }),
         { status: 401 }
       );
     }
