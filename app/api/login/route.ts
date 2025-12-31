@@ -1,10 +1,16 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { hashPassword, verifyPassword } from "@/lib/password";
+import { verifyPassword } from "@/lib/password";
+import { SignJWT } from "jose";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+// JWT署名用の秘密鍵（環境変数に設定してください）
+const SECRET_KEY = new TextEncoder().encode(
+  process.env.JWT_SECRET || "your-fallback-secret-key-at-least-32-chars"
+);
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,7 +23,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // mt_user テーブルからユーザー情報取得（user_nameで検索）
     const { data, error } = await supabase
       .from("mt_user")
       .select("*")
@@ -30,7 +35,7 @@ export async function POST(req: NextRequest) {
         { status: 401 }
       );
     }
-    // ハッシュ化されたパスワードと比較
+
     const isValidPassword = await verifyPassword(password, data.password);
 
     if (!isValidPassword) {
@@ -40,8 +45,31 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 成功時は 200 を返す
-    return new Response(JSON.stringify({ success: true }), { status: 200 });
+    // --- JWTの作成 ---
+    const token = await new SignJWT({ 
+      userId: data.id, 
+      username: data.user_name 
+    })
+      .setProtectedHeader({ alg: "HS256" })
+      .setIssuedAt()
+      .setExpirationTime("24h") // 24時間有効
+      .sign(SECRET_KEY);
+
+    // --- Cookieをセットしてレスポンス ---
+    const response = new Response(
+      JSON.stringify({ success: true }), 
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+
+    // HttpOnly属性によりJavaScriptからトークンを隠し、セキュアにします
+    response.headers.set(
+      "Set-Cookie",
+      `session_token=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400; ${
+        process.env.NODE_ENV === "production" ? "Secure;" : ""
+      }`
+    );
+
+    return response;
   } catch (e) {
     console.error(e);
     return new Response(

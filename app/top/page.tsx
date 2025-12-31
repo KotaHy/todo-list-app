@@ -11,8 +11,14 @@ export default function Top() {
     router.push("/password-change");
   };
 
-  const handleLogout = () => {
-    router.push("/");
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/logout", { method: "POST" });
+      router.push("/");
+      router.refresh(); // ミドルウェアの判定を最新にする
+    } catch (err) {
+      console.error("Logout failed", err);
+    }
   };
 
   return (
