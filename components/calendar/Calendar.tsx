@@ -205,8 +205,14 @@ export default function Calendar() {
             <CalendarHeader
               year={year}
               month={month}
-              onPreviousMonth={() => setCurrentDate(new Date(year, month - 1, 1))}
-              onNextMonth={() => setCurrentDate(new Date(year, month + 1, 1))}
+              onPreviousMonth={() => {
+                setCurrentDate(new Date(year, month - 1, 1));
+                setSelectedDate(null);
+              }}
+              onNextMonth={() => {
+                setCurrentDate(new Date(year, month + 1, 1));
+                setSelectedDate(null);
+              }}
             />
           </div>
           {isLoading ? (
