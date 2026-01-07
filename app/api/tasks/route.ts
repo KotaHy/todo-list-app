@@ -89,3 +89,35 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, message: "タスクIDが必要です。" },
+        { status: 400 }
+      );
+    }
+
+    const { error } = await supabase.from("mt_tasks").delete().eq("id", id);
+
+    if (error) {
+      console.error("Supabase delete error:", error);
+      return NextResponse.json(
+        { success: false, message: error.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ success: true, message: "タスクが正常に削除されました。" }, { status: 200 });
+  } catch (e) {
+    console.error("API error:", e);
+    return NextResponse.json(
+      { success: false, message: "サーバーエラーが発生しました" },
+      { status: 500 }
+    );
+  }
+}

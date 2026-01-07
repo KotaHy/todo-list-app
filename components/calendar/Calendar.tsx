@@ -173,12 +173,28 @@ export default function Calendar() {
     }
   };
 
-  const handleDeleteTask = (taskId: number) => {
+  const handleDeleteTask = async (taskId: number) => {
     if (!selectedDate) return;
-    setTasks((prev) => ({
-      ...prev,
-      [selectedDate]: prev[selectedDate]?.filter((t) => t.id !== taskId) || [],
-    }));
+
+    try {
+      const res = await fetch(`/api/tasks?id=${taskId}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        setTasks((prev) => ({
+          ...prev,
+          [selectedDate]: prev[selectedDate]?.filter((t) => t.id !== taskId) || [],
+        }));
+      } else {
+        const errorData = await res.json();
+        console.error("Failed to delete task:", errorData.message);
+        alert("タスクの削除に失敗しました: " + errorData.message);
+      }
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      alert("タスクの削除中にエラーが発生しました。");
+    }
   };
 
   return (
@@ -207,7 +223,7 @@ export default function Calendar() {
         </div>
 
         {selectedDate && (
-          <div className="w-80 flex-shrink-0">
+          <div className="w-80 shrink-0">
             <TaskForm
               selectedDate={selectedDate}
               tasks={tasks[selectedDate] || []}
