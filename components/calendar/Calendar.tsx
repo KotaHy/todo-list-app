@@ -1,10 +1,13 @@
 "use client";
 
+"use client";
+
 import { useState, useEffect } from "react";
 import { CalendarDay, Task, TasksByDate, User } from "./types";
 import CalendarHeader from "./CalendarHeader";
 import CalendarGrid from "./CalendarGrid";
 import TaskForm from "./TaskForm";
+import LoadingCalendar from "./LoadingCalendar"; // LoadingCalendarをインポート
 
 export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -13,6 +16,7 @@ export default function Calendar() {
   const [newTaskText, setNewTaskText] = useState("");
   const [selectedAssigneeName, setSelectedAssigneeName] = useState("");
   const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(false); // isLoading ステートを追加
 
   useEffect(() => {
     fetch("/api/users")
@@ -24,6 +28,43 @@ export default function Calendar() {
       })
       .catch(err => console.error("Failed to fetch users:", err));
   }, []);
+
+  useEffect(() => {
+    const fetchTasks = async () => {
+      setIsLoading(true); // フェッチ開始時にローディングをtrueに
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth() + 1; // getMonth() は0から始まるため+1
+      const firstDayOfMonth = new Date(year, month - 1, 1);
+      const lastDayOfMonth = new Date(year, month, 0);
+
+      const tasksByDate: TasksByDate = {};
+
+      for (let d = firstDayOfMonth; d <= lastDayOfMonth; d.setDate(d.getDate() + 1)) {
+        const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        try {
+          const res = await fetch(`/api/tasks?task_date=${dateKey}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success && data.tasks.length > 0) {
+              tasksByDate[dateKey] = data.tasks.map((task: Task) => ({
+                ...task,
+                assignee_name: users.find(u => u.id === task.users_id)?.user_name || undefined,
+              }));
+            } else if (!data.success) {
+              console.error(`Failed to fetch tasks for ${dateKey}:`, data.message);
+            }
+          } else {
+            console.error(`Failed to fetch tasks for ${dateKey}:`, res.statusText);
+          }
+        } catch (error) {
+          console.error(`Error fetching tasks for ${dateKey}:`, error);
+        }
+      }
+      setTasks(tasksByDate);
+      setIsLoading(false); // フェッチ完了時にローディングをfalseに
+    };
+    fetchTasks();
+  }, [currentDate, users]); // currentDate と users が変更されたときに再フェッチ
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth(); // 0-11
@@ -152,13 +193,17 @@ export default function Calendar() {
               onNextMonth={() => setCurrentDate(new Date(year, month + 1, 1))}
             />
           </div>
-          <CalendarGrid
-            calendarDays={calendarDays}
-            tasks={tasks}
-            currentYear={year}
-            currentMonth={month}
-            onDateClick={handleDateClick}
-          />
+          {isLoading ? (
+            <LoadingCalendar />
+          ) : (
+            <CalendarGrid
+              calendarDays={calendarDays}
+              tasks={tasks}
+              currentYear={year}
+              currentMonth={month}
+              onDateClick={handleDateClick}
+            />
+          )}
         </div>
 
         {selectedDate && (

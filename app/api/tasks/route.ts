@@ -5,6 +5,45 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const task_date = searchParams.get("task_date");
+    const users_id = searchParams.get("users_id");
+
+    if (!task_date) {
+      return NextResponse.json(
+        { success: false, message: "task_date が必要です。" },
+        { status: 400 }
+      );
+    }
+
+    let query = supabase.from("mt_tasks").select("*").eq("task_date", task_date);
+
+    if (users_id) {
+      query = query.eq("users_id", users_id);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error("Supabase select error:", error);
+      return NextResponse.json(
+        { success: false, message: error.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ success: true, tasks: data }, { status: 200 });
+  } catch (e) {
+    console.error("API error:", e);
+    return NextResponse.json(
+      { success: false, message: "サーバーエラーが発生しました" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { task_date, task_name, users_id } = await req.json();
