@@ -32,10 +32,10 @@ export default function CalendarCell({
             ? isToday
               ? "border-blue-600 bg-blue-50 dark:bg-blue-900/20 cursor-pointer"
               : "border-zinc-300 dark:border-zinc-700 hover:border-blue-400 cursor-pointer"
-            : "border-zinc-200 dark:border-zinc-800 opacity-50 cursor-pointer"
+            : "border-zinc-200 dark:border-zinc-800 opacity-50 cursor-not-allowed" // 次月はクリック不可に
         }
       `}
-      onClick={() => onDateClick(day.dateKey)}
+      onClick={() => day.isCurrentMonth && onDateClick(day.dateKey)} // 今月の日付のみクリック可能に
     >
       <div
         className={`
@@ -58,7 +58,7 @@ export default function CalendarCell({
               key={task.id}
               className="text-zinc-700 dark:text-zinc-300 truncate"
             >
-              • {task.text}
+              • {task.task_name} {/* task.text から task.task_name に変更 */}
             </li>
           ))}
           {tasks.length > 3 && (

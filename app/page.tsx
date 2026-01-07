@@ -28,7 +28,6 @@ export default function Home() {
       });
 
       if (res.status === 200) {
-        // ログイン成功時に Top へ遷移
         router.push("/top");
       } else {
         const body = await res.json().catch(() => ({}));
@@ -43,7 +42,7 @@ export default function Home() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
+    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
       <main className="flex min-h-screen w-full max-w-md flex-col items-center justify-center px-8 bg-white dark:bg-black">
         <h1 className="mb-6 text-2xl font-semibold text-black dark:text-zinc-50">
           ログイン

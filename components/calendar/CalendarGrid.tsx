@@ -32,7 +32,6 @@ export default function CalendarGrid({
 
   return (
     <>
-      {/* 曜日ヘッダー */}
       <div className="grid grid-cols-7 gap-1 mb-2">
         {weekDays.map((day) => (
           <div
@@ -44,7 +43,6 @@ export default function CalendarGrid({
         ))}
       </div>
 
-      {/* カレンダーグリッド */}
       <div className="grid grid-cols-7 gap-1 mb-4">
         {calendarDays.map((day, index) => (
           <CalendarCell

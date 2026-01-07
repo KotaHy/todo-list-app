@@ -21,7 +21,7 @@ export default function Top() {
         onPasswordChange={handleChangePassword}
         onLogout={handleLogout}
       />
-      <div className="flex flex-1 items-center justify-center p-4 pt-20">
+      <div className="flex flex-1 items-center justify-center p-4 pt-24">
         <Calendar />
       </div>
     </div>

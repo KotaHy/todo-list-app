@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { CalendarDay, Task, TasksByDate } from "./types";
+import { useState, useEffect } from "react";
+import { CalendarDay, Task, TasksByDate, User } from "./types";
 import CalendarHeader from "./CalendarHeader";
 import CalendarGrid from "./CalendarGrid";
 import TaskForm from "./TaskForm";
@@ -11,32 +11,44 @@ export default function Calendar() {
   const [tasks, setTasks] = useState<TasksByDate>({});
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [newTaskText, setNewTaskText] = useState("");
+  const [selectedAssigneeName, setSelectedAssigneeName] = useState("");
+  const [users, setUsers] = useState<User[]>([]);
+
+  useEffect(() => {
+    fetch("/api/users")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setUsers(data.users.map((u: any) => ({ ...u, id: Number(u.id) })));
+        }
+      })
+      .catch(err => console.error("Failed to fetch users:", err));
+  }, []);
 
   const year = currentDate.getFullYear();
-  const month = currentDate.getMonth();
+  const month = currentDate.getMonth(); // 0-11
 
-  // 月の最初の日と最後の日を取得
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
   const daysInMonth = lastDay.getDate();
-  const startingDayOfWeek = firstDay.getDay();
+  const startingDayOfWeek = firstDay.getDay(); // 0:日, 6:土
 
-  // カレンダーの日付配列を作成
   const calendarDays: CalendarDay[] = [];
 
-  // 1. 前月の日付を埋める
+  // 前月の日付を埋める
   const prevMonthLastDay = new Date(year, month, 0).getDate();
   for (let i = startingDayOfWeek - 1; i >= 0; i--) {
     const date = prevMonthLastDay - i;
-    const prevDate = new Date(year, month - 1, date);
+    const prevMonth = month === 0 ? 11 : month - 1;
+    const prevYear = month === 0 ? year - 1 : year;
     calendarDays.push({
       date,
       isCurrentMonth: false,
-      dateKey: `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, "0")}-${String(date).padStart(2, "0")}`,
+      dateKey: `${prevYear}-${String(prevMonth + 1).padStart(2, "0")}-${String(date).padStart(2, "0")}`,
     });
   }
 
-  // 2. 今月の日付
+  // 今月の日付
   for (let i = 1; i <= daysInMonth; i++) {
     const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(i).padStart(2, "0")}`;
     calendarDays.push({
@@ -46,66 +58,100 @@ export default function Calendar() {
     });
   }
 
-  // 3. 次月の日付で「その週の土曜日まで」を埋める
-  // 配列の長さが7の倍数になるまで、翌月の日付を追加します
-  if (calendarDays.length % 7 !== 0) {
-    const remainingDays = 7 - (calendarDays.length % 7);
-
-    for (let i = 1; i <= remainingDays; i++) {
-      const nextDate = new Date(year, month + 1, i);
-      const y = nextDate.getFullYear();
-      const m = nextDate.getMonth() + 1;
-      const d = nextDate.getDate();
-      
+  // 次月の日付を埋める (土曜日まで完全に表示)
+  const totalCells = calendarDays.length;
+  const remainingCells = 7 - (totalCells % 7);
+  if (remainingCells < 7) { // 週が完全でない場合のみ
+    for (let i = 1; i <= remainingCells; i++) {
+      const nextMonth = month === 11 ? 0 : month + 1;
+      const nextYear = month === 11 ? year + 1 : year;
       calendarDays.push({
-        date: d,
-        isCurrentMonth: false, // 翌月分なので false
-        dateKey: `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`,
+        date: i,
+        isCurrentMonth: false,
+        dateKey: `${nextYear}-${String(nextMonth + 1).padStart(2, "0")}-${String(i).padStart(2, "0")}`,
       });
     }
   }
+
 
   const handleDateClick = (dateKey: string) => {
     if (!dateKey) return;
     setSelectedDate(dateKey);
     setNewTaskText("");
+    setSelectedAssigneeName("");
   };
 
-  const handleAddTask = () => {
+  const handleAddTask = async () => {
     if (!selectedDate || !newTaskText.trim()) return;
 
-    const newTask: Task = {
-      id: Date.now().toString(),
-      text: newTaskText.trim(),
+    let users_id: number | null = null;
+    if (selectedAssigneeName) {
+      const assigneeUser = users.find(user => user.user_name === selectedAssigneeName);
+      if (assigneeUser) {
+        users_id = assigneeUser.id;
+      }
+    }
+
+    const taskData = {
+      task_date: selectedDate,
+      task_name: newTaskText.trim(),
+      users_id: users_id,
     };
 
-    setTasks((prev) => ({
-      ...prev,
-      [selectedDate]: [...(prev[selectedDate] || []), newTask],
-    }));
+    try {
+      const res = await fetch("/api/tasks", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(taskData),
+      });
 
-    setNewTaskText("");
+      if (res.ok) {
+        const responseData = await res.json();
+        const newTask: Task = {
+          ...responseData.task,
+          assignee_name: selectedAssigneeName,
+        };
+
+        setTasks((prev) => ({
+          ...prev,
+          [selectedDate]: [...(prev[selectedDate] || []), newTask],
+        }));
+
+        setNewTaskText("");
+        setSelectedAssigneeName("");
+      } else {
+        const errorData = await res.json();
+        console.error("Failed to add task:", errorData.message);
+        alert("タスクの追加に失敗しました: " + errorData.message);
+      }
+    } catch (error) {
+      console.error("Error adding task:", error);
+      alert("タスクの追加中にエラーが発生しました。");
+    }
   };
 
-  const handleDeleteTask = (taskId: string) => {
+  const handleDeleteTask = (taskId: number) => {
     if (!selectedDate) return;
     setTasks((prev) => ({
       ...prev,
-      [selectedDate]: prev[selectedDate]?.filter((task) => task.id !== taskId) || [],
+      [selectedDate]: prev[selectedDate]?.filter((t) => t.id !== taskId) || [],
     }));
   };
 
   return (
     <div className="w-full max-w-6xl bg-white rounded-xl shadow-md dark:bg-zinc-900 p-6">
       <div className="flex gap-6">
-        {/* 左側: カレンダー */}
         <div className="flex-1">
-          <CalendarHeader
-            year={year}
-            month={month}
-            onPreviousMonth={() => setCurrentDate(new Date(year, month - 1, 1))}
-            onNextMonth={() => setCurrentDate(new Date(year, month + 1, 1))}
-          />
+          <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900 pb-4">
+            <CalendarHeader
+              year={year}
+              month={month}
+              onPreviousMonth={() => setCurrentDate(new Date(year, month - 1, 1))}
+              onNextMonth={() => setCurrentDate(new Date(year, month + 1, 1))}
+            />
+          </div>
           <CalendarGrid
             calendarDays={calendarDays}
             tasks={tasks}
@@ -115,14 +161,16 @@ export default function Calendar() {
           />
         </div>
 
-        {/* 右側: タスクフォーム */}
         {selectedDate && (
           <div className="w-80 flex-shrink-0">
             <TaskForm
               selectedDate={selectedDate}
               tasks={tasks[selectedDate] || []}
+              users={users}
               newTaskText={newTaskText}
+              selectedAssignee={selectedAssigneeName}
               onTaskTextChange={setNewTaskText}
+              onAssigneeChange={setSelectedAssigneeName}
               onAddTask={handleAddTask}
               onDeleteTask={handleDeleteTask}
             />

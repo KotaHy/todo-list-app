@@ -1,6 +1,6 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { hashPassword, verifyPassword } from "@/lib/password";
+import { verifyPassword } from "@/lib/password"; // lib/password.ts が必要
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -11,41 +11,39 @@ export async function POST(req: NextRequest) {
     const { username, password } = await req.json();
 
     if (!username || !password) {
-      return new Response(
-        JSON.stringify({ success: false, message: "入力不足です" }),
+      return NextResponse.json(
+        { success: false, message: "ユーザー名とパスワードを入力してください" },
         { status: 400 }
       );
     }
 
-    // mt_user テーブルからユーザー情報取得（user_nameで検索）
     const { data, error } = await supabase
-      .from("mt_user")
+      .from("mt_user") // テーブル名が mt_users の場合は変更
       .select("*")
       .eq("user_name", username)
       .single();
 
     if (error || !data) {
-      return new Response(
-        JSON.stringify({ success: false, message: "ユーザーが見つかりません" }),
+      return NextResponse.json(
+        { success: false, message: "ユーザー名またはパスワードが正しくありません" },
         { status: 401 }
       );
     }
-    // ハッシュ化されたパスワードと比較
+
     const isValidPassword = await verifyPassword(password, data.password);
 
     if (!isValidPassword) {
-      return new Response(
-        JSON.stringify({ success: false, message: "パスワードが正しくありません" }),
+      return NextResponse.json(
+        { success: false, message: "ユーザー名またはパスワードが正しくありません" },
         { status: 401 }
       );
     }
 
-    // 成功時は 200 を返す
-    return new Response(JSON.stringify({ success: true }), { status: 200 });
+    return NextResponse.json({ success: true }, { status: 200 });
   } catch (e) {
     console.error(e);
-    return new Response(
-      JSON.stringify({ success: false, message: "サーバーエラー" }),
+    return NextResponse.json(
+      { success: false, message: "サーバーエラーが発生しました" },
       { status: 500 }
     );
   }

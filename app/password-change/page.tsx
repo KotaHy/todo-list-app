@@ -54,7 +54,6 @@ export default function PasswordChangePage() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      {/* 左上の戻るボタン */}
       <button
         onClick={() => router.back()}
         className="absolute left-4 top-4 rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-800 shadow-sm transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
