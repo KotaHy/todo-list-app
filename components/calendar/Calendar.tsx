@@ -18,6 +18,8 @@ export default function Calendar() {
   const [selectedAssigneeName, setSelectedAssigneeName] = useState("");
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(false); // isLoading ステートを追加
+  const [modalMessage, setModalMessage] = useState("");
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     fetch("/api/users")
@@ -169,11 +171,13 @@ export default function Calendar() {
       } else {
         const errorData = await res.json();
         console.error("Failed to add task:", errorData.message);
-        alert("タスクの追加に失敗しました: " + errorData.message);
+        setModalMessage("タスクの追加に失敗しました: " + errorData.message);
+        setShowModal(true);
       }
     } catch (error) {
       console.error("Error adding task:", error);
-      alert("タスクの追加中にエラーが発生しました。");
+      setModalMessage("タスクの追加中にエラーが発生しました。");
+      setShowModal(true);
     }
   };
 
@@ -193,11 +197,13 @@ export default function Calendar() {
       } else {
         const errorData = await res.json();
         console.error("Failed to delete task:", errorData.message);
-        alert("タスクの削除に失敗しました: " + errorData.message);
+        setModalMessage("タスクの削除に失敗しました: " + errorData.message);
+        setShowModal(true);
       }
     } catch (error) {
       console.error("Error deleting task:", error);
-      alert("タスクの削除中にエラーが発生しました。");
+      setModalMessage("タスクの削除中にエラーが発生しました。");
+      setShowModal(true);
     }
   };
 
@@ -248,6 +254,28 @@ export default function Calendar() {
           </div>
         )}
       </div>
+
+      {/* エラーモーダル */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white dark:bg-zinc-800 rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl">
+            <div className="text-center">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-zinc-50 mb-2">
+                エラー
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-zinc-400 mb-6">
+                {modalMessage}
+              </p>
+              <button
+                onClick={() => setShowModal(false)}
+                className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

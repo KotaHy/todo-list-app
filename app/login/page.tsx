@@ -95,6 +95,11 @@ export default function Login() {
           >
             {loading ? "ログイン中..." : "ログイン"}
           </button>
+          <div className="mt-4 text-center">
+            <a href="/users" className="text-sm text-blue-600 hover:underline">
+              新規登録
+            </a>
+          </div>
         </form>
       </main>
     </div>
