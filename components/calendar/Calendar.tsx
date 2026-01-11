@@ -3,6 +3,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { format } from "date-fns";
 import { CalendarDay, Task, TasksByDate, User } from "./types";
 import CalendarHeader from "./CalendarHeader";
 import CalendarGrid from "./CalendarGrid";
@@ -34,34 +35,37 @@ export default function Calendar() {
       setIsLoading(true); // フェッチ開始時にローディングをtrueに
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth() + 1; // getMonth() は0から始まるため+1
-      const firstDayOfMonth = new Date(year, month - 1, 1);
-      const lastDayOfMonth = new Date(year, month, 0);
 
-      const tasksByDate: TasksByDate = {};
-
-      for (let d = firstDayOfMonth; d <= lastDayOfMonth; d.setDate(d.getDate() + 1)) {
-        const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-        try {
-          const res = await fetch(`/api/tasks?task_date=${dateKey}`);
-          if (res.ok) {
-            const data = await res.json();
-            if (data.success && data.tasks.length > 0) {
-              tasksByDate[dateKey] = data.tasks.map((task: Task) => ({
+      try {
+        const res = await fetch(`/api/tasks?year=${year}&month=${month}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.tasks.length > 0) {
+            const tasksByDate: TasksByDate = {};
+            data.tasks.forEach((task: Task) => {
+              const formattedDateKey = format(new Date(task.task_date), 'yyyy-MM-dd'); // ここを修正
+              if (!tasksByDate[formattedDateKey]) {
+                tasksByDate[formattedDateKey] = [];
+              }
+              tasksByDate[formattedDateKey].push({
                 ...task,
                 assignee_name: users.find(u => u.id === task.users_id)?.user_name || undefined,
-              }));
-            } else if (!data.success) {
-              console.error(`Failed to fetch tasks for ${dateKey}:`, data.message);
-            }
-          } else {
-            console.error(`Failed to fetch tasks for ${dateKey}:`, res.statusText);
+              });
+            });
+            setTasks(tasksByDate);
+          } else if (!data.success) {
+            console.error(`Failed to fetch tasks for ${year}-${month}:`, data.message);
+          } else { // data.tasks が空の場合
+            setTasks({}); // タスクがない場合は空のオブジェクトを設定
           }
-        } catch (error) {
-          console.error(`Error fetching tasks for ${dateKey}:`, error);
+        } else {
+          console.error(`Failed to fetch tasks for ${year}-${month}:`, res.statusText);
         }
+      } catch (error) {
+        console.error(`Error fetching tasks for ${year}-${month}:`, error);
+      } finally {
+        setIsLoading(false); // フェッチ完了時にローディングをfalseに
       }
-      setTasks(tasksByDate);
-      setIsLoading(false); // フェッチ完了時にローディングをfalseに
     };
     fetchTasks();
   }, [currentDate, users]); // currentDate と users が変更されたときに再フェッチ

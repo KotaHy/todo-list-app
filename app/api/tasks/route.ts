@@ -8,24 +8,30 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const task_date = searchParams.get("task_date");
-    const users_id = searchParams.get("users_id");
+    const year = searchParams.get("year");
+    const month = searchParams.get("month"); // 月は1から12の数値
 
-    if (!task_date) {
+    if (!year || !month) {
       return NextResponse.json(
-        { success: false, message: "task_date が必要です。" },
+        { success: false, message: "year と month が必要です。" },
         { status: 400 }
       );
     }
 
-    let query = supabase.from("mt_tasks").select("*").eq("task_date", task_date);
+    const startOfMonth = `${year}-${String(month).padStart(2, "0")}-01`;
+    const endOfMonth = `${year}-${String(Number(month) + 1).padStart(2, "0")}-01`; // 次の月の1日を使って範囲を指定
 
+    let query = supabase.from("mt_tasks").select("*")
+      .gte("task_date", startOfMonth)
+      .lt("task_date", endOfMonth); // 次の月の1日より小さい日付
+
+    const users_id = searchParams.get("users_id");
     if (users_id) {
       query = query.eq("users_id", users_id);
     }
 
     const { data, error } = await query;
-
+    console.log("data", data);
     if (error) {
       console.error("Supabase select error:", error);
       return NextResponse.json(
