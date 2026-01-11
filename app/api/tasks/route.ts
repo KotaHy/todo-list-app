@@ -46,11 +46,11 @@ export async function GET(req: NextRequest) {
 
     if (userId !== 1) { // userId が 1 ではない場合のみフィルタリング
       query = query.eq("users_id", userId)
-                   .eq("created_by", userId);
+        .eq("created_by", userId);
     }
 
     query = query.gte("task_date", startOfMonth) // 月の開始日以上
-                 .lt("task_date", endOfMonth); // 次の月の1日より小さい
+      .lt("task_date", endOfMonth); // 次の月の1日より小さい
 
     const users_id = searchParams.get("users_id");
     if (users_id) {
@@ -58,7 +58,6 @@ export async function GET(req: NextRequest) {
     }
 
     const { data, error } = await query;
-    console.log("data", data);
     if (error) {
       console.error("Supabase select error:", error);
       return NextResponse.json(
