@@ -1,12 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { jwtVerify } from "jose"; // 追加
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// JWT署名用の秘密鍵（環境変数に設定してください）
+const SECRET_KEY = new TextEncoder().encode(
+  process.env.JWT_SECRET || "your-fallback-secret-key-at-least-32-chars"
+);
+
 export async function GET(req: NextRequest) {
   try {
+    // ログインユーザーのIDを取得
+    const sessionToken = req.cookies.get("session_token")?.value;
+
+    if (!sessionToken) {
+      return NextResponse.json({ success: false, message: "認証が必要です" }, { status: 401 });
+    }
+
+    let userId: number;
+    try {
+      const { payload } = await jwtVerify(sessionToken, SECRET_KEY);
+      userId = payload.userId as number; // JWTからuserIdを抽出
+    } catch (jwtError) {
+      console.error("JWT検証エラー:", jwtError);
+      return NextResponse.json({ success: false, message: "無効な認証トークンです" }, { status: 401 });
+    }
     const { searchParams } = new URL(req.url);
     const year = searchParams.get("year");
     const month = searchParams.get("month"); // 月は1から12の数値
@@ -21,9 +42,15 @@ export async function GET(req: NextRequest) {
     const startOfMonth = `${year}-${String(month).padStart(2, "0")}-01`;
     const endOfMonth = `${year}-${String(Number(month) + 1).padStart(2, "0")}-01`; // 次の月の1日を使って範囲を指定
 
-    let query = supabase.from("mt_tasks").select("*")
-      .gte("task_date", startOfMonth)
-      .lt("task_date", endOfMonth); // 次の月の1日より小さい日付
+    let query = supabase.from("mt_tasks").select("*");
+
+    if (userId !== 1) { // userId が 1 ではない場合のみフィルタリング
+      query = query.eq("users_id", userId)
+                   .eq("created_by", userId);
+    }
+
+    query = query.gte("task_date", startOfMonth) // 月の開始日以上
+                 .lt("task_date", endOfMonth); // 次の月の1日より小さい
 
     const users_id = searchParams.get("users_id");
     if (users_id) {
