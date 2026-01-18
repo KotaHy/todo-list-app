@@ -29,8 +29,12 @@ export default function Login() {
 
       if (res.ok) {
         // ログイン成功
+        const data = await res.json();
+        if (data.userId) {
+          localStorage.setItem("userId", data.userId); // userId を保存
+        }
         router.push("/top");
-        router.refresh(); // キャッシュをクリアして遷移
+        router.refresh();
       } else {
         const body = await res.json().catch(() => ({}));
         setErrorMessage(body.message ?? "ログインに失敗しました");

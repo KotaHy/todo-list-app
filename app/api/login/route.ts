@@ -46,9 +46,9 @@ export async function POST(req: NextRequest) {
     }
 
     // --- JWTの作成 ---
-    const token = await new SignJWT({ 
-      userId: data.id, 
-      username: data.user_name 
+    const token = await new SignJWT({
+      userId: data.id,
+      username: data.user_name
     })
       .setProtectedHeader({ alg: "HS256" })
       .setIssuedAt()
@@ -57,15 +57,17 @@ export async function POST(req: NextRequest) {
 
     // --- Cookieをセットしてレスポンス ---
     const response = new Response(
-      JSON.stringify({ success: true }), 
+      JSON.stringify({
+        success: true,
+        userId: data.id // ここに userId を追加
+      }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
 
     // HttpOnly属性によりJavaScriptからトークンを隠し、セキュアにします
     response.headers.set(
       "Set-Cookie",
-      `session_token=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400; ${
-        process.env.NODE_ENV === "production" ? "Secure;" : ""
+      `session_token=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400; ${process.env.NODE_ENV === "production" ? "Secure;" : ""
       }`
     );
 

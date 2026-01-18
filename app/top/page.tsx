@@ -7,8 +7,13 @@ import Calendar from "@/components/calendar/Calendar";
 export default function Top() {
   const router = useRouter();
 
-  const handleChangePassword = () => {
-    router.push("/password-change");
+  const handleGoToMyPage = () => {
+    const userId = localStorage.getItem("userId");
+    if (userId) {
+      router.push(`/users/${userId}/edit`); // IDを含めた正しいパスへ修正
+    } else {
+      router.push("/login"); // IDがない場合はログインへ
+    }
   };
 
   const handleLogout = async () => {
@@ -24,7 +29,7 @@ export default function Top() {
   return (
     <div className="flex min-h-screen bg-zinc-50 font-sans dark:bg-black">
       <TopHeader
-        onPasswordChange={handleChangePassword}
+        onMyPage={handleGoToMyPage} // 変更
         onLogout={handleLogout}
       />
       <div className="flex flex-1 items-center justify-center p-4 pt-24">
