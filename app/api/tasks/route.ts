@@ -39,8 +39,25 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const startOfMonth = `${year}-${String(month).padStart(2, "0")}-01`;
-    const endOfMonth = `${year}-${String(Number(month) + 1).padStart(2, "0")}-01`; // 次の月の1日を使って範囲を指定
+    const yearNum = Number(year);
+    const monthNum = Number(month);
+    if (
+      !Number.isInteger(yearNum) ||
+      !Number.isInteger(monthNum) ||
+      monthNum < 1 ||
+      monthNum > 12
+    ) {
+      return NextResponse.json(
+        { success: false, message: "year / month の形式が不正です。" },
+        { status: 400 }
+      );
+    }
+
+    const startDate = new Date(Date.UTC(yearNum, monthNum - 1, 1));
+    const endDate = new Date(Date.UTC(yearNum, monthNum, 1)); // 翌月の1日（12月も自動で翌年1月になる）
+
+    const startOfMonth = startDate.toISOString().slice(0, 10); // YYYY-MM-DD
+    const endOfMonth = endDate.toISOString().slice(0, 10); // YYYY-MM-DD
 
     let query = supabase.from("mt_tasks").select("*");
 
@@ -78,7 +95,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { task_date, task_name, users_id } = await req.json();
+    const { task_date, task_name, users_id, note } = await req.json();
 
     if (!task_date || !task_name) {
       return NextResponse.json(
@@ -99,6 +116,7 @@ export async function POST(req: NextRequest) {
           status: 0, // 初期ステータス
           users_id: users_id || null,
           task_date: task_date,
+          note: note || null,
           // created_at, updated_at はDBのデフォルト値に任せる
         },
       ])

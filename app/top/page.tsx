@@ -1,26 +1,40 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import TopHeader from "@/components/TopHeader";
 import Calendar from "@/components/calendar/Calendar";
 
 export default function Top() {
   const router = useRouter();
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const handleGoToMyPage = () => {
     const userId = localStorage.getItem("userId");
     if (userId) {
-      router.push(`/users/${userId}/edit`); // IDを含めた正しいパスへ修正
+      router.push(`/users/${userId}/edit`);
     } else {
-      router.push("/login"); // IDがない場合はログインへ
+      router.push("/login");
     }
+  };
+
+  useEffect(() => {
+    const userId = localStorage.getItem("userId");
+    setIsAdmin(userId === "1");
+  }, []);
+
+  const handleSearchUserTasks = () => {
+    if (!isAdmin) {
+      return;
+    }
+    router.push("/top/user-tasks");
   };
 
   const handleLogout = async () => {
     try {
       await fetch("/api/logout", { method: "POST" });
       router.push("/");
-      router.refresh(); // ミドルウェアの判定を最新にする
+      router.refresh();
     } catch (err) {
       console.error("Logout failed", err);
     }
@@ -29,8 +43,10 @@ export default function Top() {
   return (
     <div className="flex min-h-screen bg-zinc-50 font-sans dark:bg-black">
       <TopHeader
-        onMyPage={handleGoToMyPage} // 変更
+        onMyPage={handleGoToMyPage}
         onLogout={handleLogout}
+        onSearchUserTasks={handleSearchUserTasks}
+        isAdmin={isAdmin}
       />
       <div className="flex flex-1 items-center justify-center p-4 pt-24">
         <Calendar />

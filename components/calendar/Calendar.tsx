@@ -15,6 +15,7 @@ export default function Calendar() {
   const [tasks, setTasks] = useState<TasksByDate>({});
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [newTaskText, setNewTaskText] = useState("");
+  const [newTaskNote, setNewTaskNote] = useState("");
   const [selectedAssigneeName, setSelectedAssigneeName] = useState("");
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(false); // isLoading ステートを追加
@@ -125,6 +126,7 @@ export default function Calendar() {
     if (!dateKey) return;
     setSelectedDate(dateKey);
     setNewTaskText("");
+    setNewTaskNote("");
     setSelectedAssigneeName("");
   };
 
@@ -143,6 +145,7 @@ export default function Calendar() {
       task_date: selectedDate,
       task_name: newTaskText.trim(),
       users_id: users_id,
+      note: newTaskNote.trim() || null,
     };
 
     try {
@@ -159,6 +162,7 @@ export default function Calendar() {
         const newTask: Task = {
           ...responseData.task,
           assignee_name: selectedAssigneeName,
+          note: newTaskNote.trim() || undefined,
         };
 
         setTasks((prev) => ({
@@ -167,6 +171,7 @@ export default function Calendar() {
         }));
 
         setNewTaskText("");
+        setNewTaskNote("");
         setSelectedAssigneeName("");
       } else {
         const errorData = await res.json();
@@ -245,8 +250,10 @@ export default function Calendar() {
               tasks={tasks[selectedDate] || []}
               users={users}
               newTaskText={newTaskText}
+              newTaskNote={newTaskNote}
               selectedAssignee={selectedAssigneeName}
               onTaskTextChange={setNewTaskText}
+              onTaskNoteChange={setNewTaskNote}
               onAssigneeChange={setSelectedAssigneeName}
               onAddTask={handleAddTask}
               onDeleteTask={handleDeleteTask}

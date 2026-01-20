@@ -5,8 +5,10 @@ interface TaskFormProps {
   tasks: Task[];
   users: User[];
   newTaskText: string;
+  newTaskNote: string;
   selectedAssignee: string; // 選択された担当者名 (string)
   onTaskTextChange: (text: string) => void;
+  onTaskNoteChange: (text: string) => void;
   onAssigneeChange: (assignee: string) => void;
   onAddTask: () => void;
   onDeleteTask: (taskId:number) => void;
@@ -17,8 +19,10 @@ export default function TaskForm({
   tasks,
   users,
   newTaskText,
+  newTaskNote,
   selectedAssignee,
   onTaskTextChange,
+  onTaskNoteChange,
   onAssigneeChange,
   onAddTask,
   onDeleteTask,
@@ -41,7 +45,13 @@ export default function TaskForm({
             placeholder="タスク内容を入力"
             className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-black shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
           />
-          
+          <textarea
+            value={newTaskNote}
+            onChange={(e) => onTaskNoteChange(e.target.value)}
+            placeholder="メモ（任意）"
+            rows={2}
+            className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-black shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 resize-none"
+          />
           <div className="flex gap-2">
             <select
               value={selectedAssignee}
@@ -80,6 +90,11 @@ export default function TaskForm({
                 {task.assignee_name && (
                   <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 ml-3">
                     担当: {task.assignee_name}
+                  </span>
+                )}
+                {task.note && (
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 ml-3">
+                    メモ: {task.note}
                   </span>
                 )}
               </div>
