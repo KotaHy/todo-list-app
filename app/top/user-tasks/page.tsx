@@ -153,7 +153,6 @@ export default function UserTasksPage() {
       <TopHeader
         onMyPage={handleGoToMyPage}
         onLogout={handleLogout}
-        onSearchUserTasks={handleSearchUserTasks}
         isAdmin={isAdmin}
         onBackToTop={handleBackToTop}
       />
