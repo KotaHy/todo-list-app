@@ -1,38 +1,82 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
-<img width="1918" height="916" alt="image" src="https://github.com/user-attachments/assets/1fbe434e-3028-4f29-8697-ad360ec26b02" />
+# Todo List App
 
-## Getting Started
+カレンダー形式でタスクを管理できるWebアプリケーションです。
 
-First, run the development server:
+![アプリ画面](https://github.com/user-attachments/assets/1fbe434e-3028-4f29-8697-ad360ec26b02)
+
+## 機能
+
+- **ログイン / ログアウト** — JWT セッション管理による認証
+- **カレンダー表示** — 年月単位でタスクを一覧表示
+- **タスク管理** — タスクの作成・削除・メモ記入
+- **ユーザー管理** — ユーザー登録・プロフィール編集（ユーザー名・パスワード変更）
+- **管理者機能** — 他ユーザーのタスク検索・閲覧（ID=1 のユーザーが管理者）
+
+## 技術スタック
+
+| カテゴリ | 使用技術 |
+|---|---|
+| フレームワーク | Next.js 16 (App Router) |
+| 言語 | TypeScript |
+| UI | Material UI (MUI) v7 / Tailwind CSS v4 |
+| データベース | Supabase (PostgreSQL) |
+| 認証 | JWT (jose) / パスワードハッシュ (bcryptjs) |
+| デプロイ | Vercel |
+
+## セットアップ
+
+### 1. リポジトリをクローン
+
+```bash
+git clone <repository-url>
+cd todo-list-app
+npm install
+```
+
+### 2. 環境変数を設定
+
+`.env.local` を作成し、以下の変数を設定してください。
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=<Supabase Project URL>
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<Supabase Anon Key>
+SUPABASE_SERVICE_ROLE_KEY=<Supabase Service Role Key>
+JWT_SECRET=<32文字以上のランダムな文字列>
+```
+
+Supabase のキーはプロジェクトの **Settings > API** から取得できます。
+
+### 3. 開発サーバーを起動
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+[http://localhost:3000](http://localhost:3000) をブラウザで開いてください。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## ページ構成
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| パス | 説明 |
+|---|---|
+| `/login` | ログイン画面 |
+| `/top` | カレンダー（メイン画面） |
+| `/top/user-tasks` | ユーザー別タスク検索（管理者のみ） |
+| `/users` | ユーザー一覧 |
+| `/users/[id]/edit` | プロフィール編集 |
 
-## Learn More
+## API エンドポイント
 
-To learn more about Next.js, take a look at the following resources:
+| メソッド | パス | 説明 |
+|---|---|---|
+| POST | `/api/login` | ログイン |
+| POST | `/api/logout` | ログアウト |
+| GET | `/api/tasks?year=&month=` | タスク一覧取得 |
+| POST | `/api/tasks` | タスク作成 |
+| DELETE | `/api/tasks?id=` | タスク削除 |
+| GET | `/api/users` | ユーザー一覧取得 |
+| POST | `/api/users` | ユーザー登録 |
+| PUT | `/api/users` | ユーザー情報更新 |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## デプロイ
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
+Vercel へのデプロイは[こちらのガイド](https://nextjs.org/docs/app/building-your-application/deploying)を参照してください。上記の環境変数を Vercel のプロジェクト設定にも追加してください。
