@@ -186,6 +186,47 @@ export default function Calendar() {
     }
   };
 
+  const handleEditTask = async (
+    taskId: number,
+    data: { task_name: string; note: string | null; users_id: number | null; assignee_name: string | undefined }
+  ) => {
+    try {
+      const res = await fetch("/api/tasks", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: taskId, task_name: data.task_name, note: data.note, users_id: data.users_id }),
+      });
+
+      if (res.ok) {
+        setTasks((prev) => {
+          const updated = { ...prev };
+          for (const dateKey in updated) {
+            updated[dateKey] = updated[dateKey].map((t) =>
+              t.id === taskId
+                ? {
+                    ...t,
+                    task_name: data.task_name,
+                    note: data.note,
+                    users_id: data.users_id ?? undefined,
+                    assignee_name: data.assignee_name,
+                  }
+                : t
+            );
+          }
+          return updated;
+        });
+      } else {
+        const errorData = await res.json();
+        setModalMessage("タスクの更新に失敗しました: " + errorData.message);
+        setShowModal(true);
+      }
+    } catch (error) {
+      console.error("Error editing task:", error);
+      setModalMessage("タスクの更新中にエラーが発生しました。");
+      setShowModal(true);
+    }
+  };
+
   const handleDeleteTask = async (taskId: number) => {
     if (!selectedDate) return;
 
@@ -257,6 +298,7 @@ export default function Calendar() {
               onAssigneeChange={setSelectedAssigneeName}
               onAddTask={handleAddTask}
               onDeleteTask={handleDeleteTask}
+              onEditTask={handleEditTask}
             />
           </div>
         )}

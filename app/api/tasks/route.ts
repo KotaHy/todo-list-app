@@ -140,6 +140,41 @@ export async function POST(req: NextRequest) {
   }
 }
 
+export async function PUT(req: NextRequest) {
+  try {
+    const { id, task_name, note, users_id } = await req.json();
+
+    if (!id || !task_name) {
+      return NextResponse.json(
+        { success: false, message: "IDとタスク内容が必要です" },
+        { status: 400 }
+      );
+    }
+
+    const { data, error } = await supabase
+      .from("mt_tasks")
+      .update({ task_name, note: note || null, users_id: users_id || null })
+      .eq("id", id)
+      .select();
+
+    if (error) {
+      console.error("Supabase update error:", error);
+      return NextResponse.json(
+        { success: false, message: error.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ success: true, task: data[0] }, { status: 200 });
+  } catch (e) {
+    console.error("API error:", e);
+    return NextResponse.json(
+      { success: false, message: "サーバーエラーが発生しました" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
